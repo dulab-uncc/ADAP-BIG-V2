@@ -10,6 +10,6 @@ import logging
 
 
 if __name__ == '__main__':
-    get_image_for_blocks(r"C:\Users\jerry\Desktop\DCSM_PROFILE.mzML", r"C:\Users\jerry\Desktop\Results", window_mz = 8, window_rt= 16)
-    breakpoint()
+    get_image_for_blocks(r"C:\Users\jerry\Desktop\DCSM_PROFILE.mzML", r"C:\Users\jerry\Desktop\Results", window_mz = 25, window_rt= 65)
+
 
