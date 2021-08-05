@@ -12,6 +12,7 @@ build/
 develop-eggs/
 dist/
 downloads/
+/mzml-img-blocks/
 eggs/
 .eggs/
 lib/
