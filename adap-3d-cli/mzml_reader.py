@@ -1,3 +1,11 @@
+"""mzml reader module
+
+-extract time values
+-extract mzarrs for each time
+-extract intensity for each mzarr
+
+"""
+
 from base64 import b64decode as b64dec
 from struct import unpack as unpack
 import zlib
