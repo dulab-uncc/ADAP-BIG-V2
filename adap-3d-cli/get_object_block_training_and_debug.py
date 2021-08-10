@@ -7,6 +7,7 @@
 
 import numpy as np
 import pandas as pd
+from get_object_block_imgs import get_image_for_blocks
 from mzml_reader import extract_mzvals, extract_timevals, extract_intensities
 import matplotlib.pyplot as plt
 import matplotlib

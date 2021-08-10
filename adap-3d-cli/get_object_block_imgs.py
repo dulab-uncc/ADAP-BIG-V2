@@ -28,6 +28,8 @@ def get_image_for_blocks(profile_file_mzML, window_mz=60, window_rt=300, timetoi
     intensity_list = extract_intensities(inputfile, 0, len(scan_t))
     cnt = 0
     arr_of_mz_rt = []
+    intensitiesarr = []
+
 
     ## Cleaning up data ##
     if (len(scan_t) > 2 and scan_t[1] - scan_t[0] > 0.1):  ## if gap >0.1: second..
@@ -80,9 +82,10 @@ def get_image_for_blocks(profile_file_mzML, window_mz=60, window_rt=300, timetoi
                 for m in range(len(mzvalarrsplit)):
                     pos_mz = mz_list[t].index(find_nearest(mz_list[t], mzvalarrsplit[m]))
                     grids_part.append(htgrids[pos_mz])
-                    arrofmzrttemp.append([scan_t[t], mz_list[t][m]])
+                    arrofmzrttemp.append([scan_t[t], mzvalarrsplit[m]])
                 area.append(grids_part)
             arr_of_mz_rt.append(arrofmzrttemp)
+            intensitiesarr.append(area)
 
 
             ## Taking log of each intensity in the image and saving the attribute to the corresponding peak object ##
@@ -99,7 +102,7 @@ def get_image_for_blocks(profile_file_mzML, window_mz=60, window_rt=300, timetoi
             plt.savefig(r'.\mzml-img-blocks\ ' + "Block # " + str(cnt) + '.png')
             plt.close('all')
 
-    return arr_of_mz_rt
+    return arr_of_mz_rt, intensitiesarr
 
 
 

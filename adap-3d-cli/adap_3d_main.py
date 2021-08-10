@@ -16,14 +16,15 @@ def main():
     #os.chdir(r"../ADAP-3D-V2")
     #if not os.path.isdir(r'../mzml-img-blocks'):
         #os.system('mkdir .\mzml-img-blocks')
-    #imgs = get_image_for_blocks(params.profile_mzml_path, window_mz = 25, window_rt= 65, timetoignoreL = 10, timetoignoreR = 13)
+    #imgs = get_image_for_blocks(params.profile_mzml_path, window_mz = 25, window_rt= 65, timetoignoreL = 10, timetoignoreR = 12)
     #pickle.dump(imgs, open(params.results_path + "\\saveADAP.p", "wb"))
     #os.chdir(r"../ADAP-3D-V2/yolov5")
     #os.system("python detect.py --weights " + params.weights_path + " --img 640 --conf 0.4 --source " + params.source_path + " --save-txt --save-conf")
     imgs = pickle.load(open(params.results_path + "\\saveADAP.p", "rb"))
     arrofpredictions = getinferencearrs()
     arroffilenames = getinferencefilenames()
-    breakpoint()
+    dataframetoexport = convert(imgs[0], imgs[1], arroffilenames, arrofpredictions, params.window_mz, params.window_rt)
+    dataframetoexport.to_csv(params.results_path + "\ADAP-3D-Predictions.csv")
 
 if __name__ == '__main__':
     main()
