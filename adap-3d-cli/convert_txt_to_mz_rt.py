@@ -69,14 +69,16 @@ def convert(mz_rt_img, intensity_img, filenamelist, inferencearr, window_mz, win
             poscenterinimg = 50 * maxintensitycoords[0] + maxintensitycoords[1]
             mzrtval = img[poscenterinimg]
             mzrtvalarr.append(mzrtval)
-            mzleft = img[centerx - round(width/2)][1]
-            mzright = img[centerx + round(width/2)][1]
-            rtleft = img[50 * (centery - round(height/2) - 1)][0]
-            rtright = img[50 * (centery + round(height/2) - 1)][0]
+            mzleft = img[centerx - math.floor(width/2)][1]
+            mzright = img[centerx + math.floor(width/2)][1]
+            rtleft = img[50 * (centery - math.floor(height/2) - 1)][0]
+            rtright = img[50 * (centery + math.floor(height/2) - 1)][0]
+
             finalintensity = pow(10, maxintensity)
             finalarr.append([mzrtval[1], mzrtval[0], mzleft, mzright, rtleft, rtright, finalintensity, round(float(inference[5]) * 100, 3)])
             #savetestimg(mzrtval[1], mzrtval[0], params.window_rt, params.window_mz)
             #breakpoint()
+
     return pd.DataFrame(np.array(finalarr), columns=['M/Z', 'Retention Time', 'M/Z Left Range', 'M/Z Right Range', "Retention Time Left Range", "Retention Time Right Range", "Intensity", "Model Confidence"])
 
 def savetestimg(mz, rt, window_rt, window_mz):

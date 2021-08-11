@@ -7,6 +7,7 @@
 
 import numpy as np
 import pandas as pd
+import params
 from get_object_block_imgs import get_image_for_blocks
 from mzml_reader import extract_mzvals, extract_timevals, extract_intensities
 import matplotlib.pyplot as plt
@@ -26,8 +27,21 @@ def find_max_list(list):
 
 def get_image_for_blocks2(profile_file_mzML, RESULTS_PATH, window_mz=60, window_rt=300, timetoignoreL = 2, timetoignoreR = 20, debugimageversion = False):
     dataFramePrevEvaluation = pd.read_csv(r"C:\Users\jerry\Desktop\DCSM.csv")
+    dataFrameV2Prediction = pd.read_csv(params.results_path + "\ADAP-3D-Predictions.csv")
     predictionsArrTime = dataFramePrevEvaluation['retention_time']
     predictionsArrMz = dataFramePrevEvaluation['mz']
+    predictionsArrV2Time = dataFrameV2Prediction['Retention Time']
+    predictionsArrV2Mz = dataFrameV2Prediction['M/Z']
+    for timev1 in range(len(predictionsArrTime)):
+        predictionsArrTime = round(predictionsArrTime[timev1], 1)
+    for mzv1 in range(len(predictionsArrMz)):
+        predictionsArrMz = round(predictionsArrMz[mzv1], 2)
+    for timev2 in range(len(predictionsV2ArrTime)):
+        predictionsArrTime = round(predictionsArrV2Time[timev1], 1)
+    for mzv2 in range(len(predictionsArrV2Mz)):
+        predictionsArrMz = round(predictionsArrV2Mz[mzv1], 2)
+
+
     inputfile = profile_file_mzML
     if not os.path.isdir(RESULTS_PATH + '\Signal_Images\DCSMLarge'):
         os.system('mkdir .\Results\Signal_Images\DCSMLarge')
