@@ -18,6 +18,7 @@ eggs/
 lib/
 lib64/
 mzml-img-blocks/
+../mzml-img-blocks-new/
 mzml-img-detection-debug/
 yolov5/runs/
 parts/

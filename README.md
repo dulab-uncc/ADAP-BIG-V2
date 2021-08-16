@@ -2,6 +2,9 @@
 
 ADAP-BIG-V2 is a program that detects peaks in mass spec data using object detection and image processing through the YOLOv5 algorithm
 
+
+Model training notebook:
+https://colab.research.google.com/drive/1vu1k6z1g4rmgjnz271kcRZLEP1_-K79M?usp=sharing
 ## Installation
 
 CD to the folder with requirements.txt and run this command in the terminal:

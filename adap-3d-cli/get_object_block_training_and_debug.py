@@ -12,10 +12,12 @@ from get_object_block_imgs import get_image_for_blocks
 from mzml_reader import extract_mzvals, extract_timevals, extract_intensities
 import matplotlib.pyplot as plt
 import matplotlib
+import math
+
 matplotlib.use("Agg")
 import os
 
-#Helper function for when attribute values are too rounded in order to locate them in an array
+# Helper function for when attribute values are too rounded in order to locate them in an array
 def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
@@ -24,6 +26,28 @@ def find_nearest(array, value):
 def find_max_list(list):
     list_len = [len(i) for i in list]
     print(max(list_len))
+
+# Test function to check similarities between CSV files
+# No use to workflow, just extra code
+def check_similarities_between_v1_v2():
+    newdataframe = []
+    dataFramePrevEvaluation = pd.read_csv(r"C:\Users\jerry\Desktop\DCSM.csv")
+    dataFrameV2Prediction = pd.read_csv(params.results_path + "\ADAP-3D-Predictions.csv")
+    predictionsArrTime = dataFramePrevEvaluation['retention_time']
+    predictionsArrMz = dataFramePrevEvaluation['mz']
+    predictionsArrV2Time = dataFrameV2Prediction['Retention Time']
+    predictionsArrV2Mz = dataFrameV2Prediction['M/Z']
+
+
+    for time in range(len(predictionsArrV2Mz)):
+        check = 0
+        for time1 in range(len(predictionsArrMz)):
+            if(check == 0 and math.isclose(predictionsArrMz[time1], predictionsArrV2Mz[time], rel_tol = 0.005) and math.isclose(predictionsArrTime[time1], predictionsArrV2Time[time], rel_tol = 0.05)):
+                newdataframe.append([predictionsArrV2Mz[time], predictionsArrV2Time[time]])
+                check = 1
+
+    finaldataframe = pd.DataFrame(newdataframe, columns=['M/Z', 'Retention Time'])
+    finaldataframe.to_csv(params.results_path + "\ADAP-3D-Predictions-Similarities.csv")
 
 def get_image_for_blocks2(profile_file_mzML, RESULTS_PATH, window_mz=60, window_rt=300, timetoignoreL = 2, timetoignoreR = 20, debugimageversion = False):
     dataFramePrevEvaluation = pd.read_csv(r"C:\Users\jerry\Desktop\DCSM.csv")

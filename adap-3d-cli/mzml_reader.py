@@ -1,8 +1,10 @@
-"""mzml reader module
+"""
 
--extract time values
+mzml reader module
+
+-extract time values for each scan
 -extract mzarrs for each time
--extract intensity for each mzarr
+-extract intensity for each mz value in each mzarr for each time
 
 """
 
