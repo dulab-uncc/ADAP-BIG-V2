@@ -21,7 +21,7 @@ pip install requirements.txt
 ## Usage
 
 ```python
-python ADAP-BIG-OBJECT-DETECTION.py
+python adap_3d_main.py
 ```
 
 ## Adjust Parameters
