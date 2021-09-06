@@ -14,14 +14,17 @@ import matplotlib.pyplot as plt
 import matplotlib
 import math
 
+plt.rcParams["figure.figsize"] = (3 ,7)
 matplotlib.use("Agg")
 import os
 
 # Helper function for when attribute values are too rounded in order to locate them in an array
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return array[idx]
+def find_nearest(array,value):
+    idx = np.searchsorted(array, value, side="left")
+    if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
+        return array[idx-1]
+    else:
+        return array[idx]
 
 def find_max_list(list):
     list_len = [len(i) for i in list]
@@ -49,28 +52,29 @@ def check_similarities_between_v1_v2():
     finaldataframe = pd.DataFrame(newdataframe, columns=['M/Z', 'Retention Time'])
     finaldataframe.to_csv(params.results_path + "\ADAP-3D-Predictions-Similarities.csv")
 
-def get_image_for_blocks2(profile_file_mzML, RESULTS_PATH, window_mz=60, window_rt=300, timetoignoreL = 2, timetoignoreR = 20, debugimageversion = False):
+def get_image_for_blocks2(profile_file_mzML, window_mz=60, window_rt=300, timetoignoreL = 2, timetoignoreR = 20, debugimageversion = False):
     dataFramePrevEvaluation = pd.read_csv(r"C:\Users\jerry\Desktop\DCSM.csv")
     dataFrameV2Prediction = pd.read_csv(params.results_path + "\ADAP-3D-Predictions.csv")
+    confirmedpeaks = pd.read_csv(r"C:\Users\jerry\Desktop\confirmed_peaks.csv")
+    mzvals = list(map(float, confirmedpeaks['m/z']))
+    timevals = confirmedpeaks['rt']
+
+
     predictionsArrTime = dataFramePrevEvaluation['retention_time']
     predictionsArrMz = dataFramePrevEvaluation['mz']
     predictionsArrV2Time = dataFrameV2Prediction['Retention Time']
     predictionsArrV2Mz = dataFrameV2Prediction['M/Z']
-    for timev1 in range(len(predictionsArrTime)):
-        predictionsArrTime = round(predictionsArrTime[timev1], 1)
-    for mzv1 in range(len(predictionsArrMz)):
-        predictionsArrMz = round(predictionsArrMz[mzv1], 2)
-    for timev2 in range(len(predictionsV2ArrTime)):
-        predictionsArrTime = round(predictionsArrV2Time[timev1], 1)
-    for mzv2 in range(len(predictionsArrV2Mz)):
-        predictionsArrMz = round(predictionsArrV2Mz[mzv1], 2)
+    #for timev1 in range(len(predictionsArrTime)):
+        #predictionsArrTime = round(predictionsArrTime[timev1], 1)
+    #for mzv1 in range(len(predictionsArrMz)):
+        #predictionsArrMz = round(predictionsArrMz[mzv1], 2)
+    #for timev2 in range(len(predictionsV2ArrTime)):
+        #predictionsArrTime = round(predictionsArrV2Time[timev1], 1)
+    #for mzv2 in range(len(predictionsArrV2Mz)):
+        #predictionsArrMz = round(predictionsArrV2Mz[mzv1], 2)
 
 
     inputfile = profile_file_mzML
-    if not os.path.isdir(RESULTS_PATH + '\Signal_Images\DCSMLarge'):
-        os.system('mkdir .\Results\Signal_Images\DCSMLarge')
-    if not os.path.isdir(RESULTS_PATH + '\Signal_Images\CONFIRMED_PEAKS'):
-        os.system('mkdir .\Results\Signal_Images\CONFIRMED_PEAKS')
 
 
     ## Scanning the raw mzML file into array data ##
@@ -78,7 +82,7 @@ def get_image_for_blocks2(profile_file_mzML, RESULTS_PATH, window_mz=60, window_
     mz_list = extract_mzvals(inputfile, 0, len(scan_t))
     intensity_list = extract_intensities(inputfile, 0, len(scan_t))
     cnt = 0
-    ## Cleaning up data ##
+    ## Cleaning up data into minutes##
     if (len(scan_t) > 2 and scan_t[1] - scan_t[0] > 0.1):  ## if gap >0.1: second..
         scan_t = [i / 60.0 for i in scan_t]
 
@@ -91,19 +95,22 @@ def get_image_for_blocks2(profile_file_mzML, RESULTS_PATH, window_mz=60, window_
     #Add a check to remove rt before and after for noise
     timetoignoreleft = find_nearest(scan_t, timetoignoreL)
     timetoignoreright = find_nearest(scan_t, timetoignoreR)
-    for time in range(len(predictionsArrTime)):
-        cnt += 1
-        #if(float(predictionsArrTime[time]) < 20.0 and float(predictionsArrTime[time]) > 2.5):
-        #mz0 = mzarr[time]
-        #rt0 = timearr[time]
-        #mz0 = predictionsArrMz[time]
-        #rt0 = predictionsArrTime[time]
-        mz0 = predictionsArrMz[time]
-        rt0 = predictionsArrTime[time]
+    for time in range(len(timevals)):
 
-        pos_rt=scan_t.index(find_nearest(scan_t, rt0))
+        # Find index and length of longest mzarr in time range so no mz values are left out.
+        # All mzarrs start and end at the same values but some arrays contain more values in between, so we need to include those
+        mz0 = mzvals[time]
+        rt0 = timevals[time]
+
+        cnt += 1
+        # Create indexes of time of entire mzarr
+        pos_rt = scan_t.index(find_nearest(scan_t, rt0))
+
+        # Adjust index boundaries to create a 50x130 image that doesn't overlap since we want all mz values based from the largest mzarr to include all the possible values we can
+        # (may not be in the center of the image)
         pos_rt1 = pos_rt - window_rt
         pos_rt2 = pos_rt + window_rt
+
         if pos_rt2 >= len(scan_t):
             pos_rt1 = len(scan_t) - window_rt * 2
             pos_rt2 = len(scan_t)
@@ -111,48 +118,120 @@ def get_image_for_blocks2(profile_file_mzML, RESULTS_PATH, window_mz=60, window_
             pos_rt1 = 0
             pos_rt2 = 2 * window_rt
 
-        pos_mzorig = mz_list[pos_rt].index(find_nearest(mz_list[pos_rt], mz0))
-        #pos_mzorig = mz0
+        allmzintime = []
+        allintensityintime = []
+        for i in range(pos_rt1, pos_rt2):
+            for j in range(len(mz_list[i])):
+                allmzintime.append(mz_list[i][j])
+                allintensityintime.append(intensity_list[i][j])
+
+        tempmz = []
+
+        for i in np.arange(allmzintime[0], allmzintime[len(allmzintime) - 1], 0.0005):
+            tempmz.append(i)
+
+        tempmz[len(tempmz)-1] = tempmz[len(tempmz) - 1] + 0.1
+        binnedvals = list(pd.cut(np.array(allmzintime), tempmz, right = False, labels = False))
+
+        newbinnedmz = []
+        newbinnedintensity = []
+        templistmz = []
+        templistintensity = []
+
+        for i in range(1, len(binnedvals)):
+
+            if(binnedvals[i] == binnedvals[i-1]):
+                templistmz.append(allmzintime[i])
+                templistintensity.append(allintensityintime[i])
+            elif len(templistmz) > 0:
+                newbinnedmz.append(allmzintime[i])
+                newbinnedintensity.append(allintensityintime[i])
+            else:
+                newbinnedintensity.append(max(templistintensity))
+                newbinnedmz.append(templistmz[templistintensity.index(max(templistintensity))])
+                templistmz = []
+                templistintensity = []
+
+        newallmzintime = newbinnedmz
+
+
+        # Set index of mz value in the longestmzarr and make windows
+        pos_mzorig = newallmzintime.index(find_nearest(newallmzintime, mz0))
         pos_mz1orig = pos_mzorig - window_mz
         pos_mz2orig = pos_mzorig + window_mz
-
-        if pos_mz2orig >= len(mz_list):
-            pos_mz1orig = len(mz_list) - window_mz * 2
-            pos_mz2orig = len(mz_list)
-        elif pos_mz1orig < 0:
-            pos_mz1orig = 0
-            pos_mz2orig = 2 * window_mz
         mzvalarrsplit = []
-        for mzmz in range(window_mz, -1, -1):
-            mzvalarrsplit.append(round(mz_list[int(pos_rt)][int(pos_mzorig - mzmz)], 6))
-        for mzmz in range(1, window_mz):
-            mzvalarrsplit.append(round(mz_list[int(pos_rt)][int(pos_mzorig + mzmz)], 6))
-
-        ## Creating the image from calculated ranges ##
+        intensitysplit = []
+        # Go through every m/z value in the longest mzarr that is within 50 values and saving them to an array to be used in image creation
+        # Because the m/z values are not always in the same index position, we will use .index and find_nearest()
+        # for mzmz in range(window_mz, -1, -1):
+        # mzvalarrsplit.append(round(allmzintime[int(pos_rt)][int(pos_mzorig - mzmz)], 6))
+        # for mzmz in range(1, window_mz):
+        # mzvalarrsplit.append(round(allmzintime[int(pos_rt)][int(pos_mzorig + mzmz)], 6))
+        for mzmz in range(pos_mzorig - window_mz, pos_mzorig + window_mz):
+            mzvalarrsplit.append(newallmzintime[mzmz])
+            intensitysplit.append(allintensityintime[mzmz])
+        # Creating the image from calculated ranges
         area = []
+        arrofmzrttemp = []
+        # Looping through all times in range
+        """
         for t in range(pos_rt1, pos_rt2):
             htgrids = intensity_list[t]
             grids_part = []
             for m in range(len(mzvalarrsplit)):
-                pos_mz = mz_list[t].index(find_nearest(mz_list[t], mzvalarrsplit[m]))
-                grids_part.append(htgrids[pos_mz])
+                # Going through every m/z value (50 total) in mzvalarrsplit and getting the intensity of that mzvalue in each different time value, saving it to an array
+                # If cannot locate mzvalue in that mzarr at time "t" append intensity of 0
+                if(abs(mzvalarrsplit[m] - mz_list[t][mz_list[t].index(find_nearest(mz_list[t], mzvalarrsplit[m]))]) <= 0.000005):
+                    pos_mz = mz_list[t].index(find_nearest(mz_list[t], mzvalarrsplit[m]))
+                    grids_part.append(np.log10(htgrids[pos_mz]))
+                else:
+                    grids_part.append(0)
             area.append(grids_part)
+            """
+        for t in range(pos_rt1, pos_rt2):
+            intensitygrid = intensity_list[t]
+            mzgrid = mz_list[t]
+            mzleft = mzgrid.index(find_nearest(mzgrid, newallmzintime[pos_mzorig - window_mz]))
+            mzright = mzgrid.index(find_nearest(mzgrid, newallmzintime[pos_mzorig + window_mz]))
+            grids_part = []
+            tempvalarrsplit = mzvalarrsplit
+            tempvalarrsplit[len(tempvalarrsplit) - 1] = tempvalarrsplit[len(tempvalarrsplit) - 1] + 0.001
+            tempvalarrsplit[0] = tempvalarrsplit[0] - 0.001
+            binnedvals2 = list(pd.cut(np.array(mzgrid[mzleft: mzright + 1]), tempvalarrsplit, right=False, labels=False))
+            finalbins = []
 
-        ## Taking log of each intensity in the image and saving the attribute to the corresponding peak object ##
-        for l in range(0,len(area)):
-            for m in range(0,len(area[0])):
-                if(area[l][m] > 0):
-                    area[l][m] = np.log10(area[l][m])
+            for i in range(window_mz*2):
+                temparr = []
+                for j in range(len(binnedvals2)):
+                    if(binnedvals2[j] == i):
+                        temparr.append(intensitygrid[mzleft + j])
+                if(len(temparr) == 0):
+                    finalbins.append(0)
+                else:
+                    finalbins.append(max(temparr))
 
-        ## Create figure and axes objects. Adjust values and create the image ##
+            area.append(finalbins)
+            """
+            for m in range(len(finalmzlist)):
+                try:
+                    pos_mz = mz_list[t].index(finalmzlist[m])
+                    grids_part.append(np.log10(intensitygrid[pos_mz]))
+                except:
+                    grids_part.append(0)
+            area.append(grids_part)
+            """
 
-        plt.imshow(area, cmap = 'Greys', aspect = 'auto')
+        # Render array as an image and save it to local drive path
+        plt.imshow(area, cmap='Greys', aspect='auto')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
         plt.margins(0, 0)
-        plt.savefig(r'.\debug-imgs\ ' + "Block # " + str(cnt) + '.png')
+        plt.savefig(r'.\mzml-img-blocks-new-test-5\ ' + "Block # " + str(cnt) + '.png')
         plt.close('all')
 
+        """
+        Add color bar, etc
+        """
         # fig, ax = plt.subplots()
         # fig.set_figheight(1.3)
         # fig.set_figwidth(0.5)

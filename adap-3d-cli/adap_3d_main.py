@@ -26,21 +26,26 @@ import params
 import pickle
 
 def main():
+    if not os.path.isdir(r'../mzml-img-blocks-new-test-5'):
+        os.system('mkdir .\mzml-img-blocks-new-test-5')
+    get_image_for_blocks2(params.profile_mzml_path, window_mz = 30, window_rt= 70, timetoignoreL = 2.5, timetoignoreR = 19)
+    breakpoint()
 
-    if not os.path.isdir(r'../mzml-img-blocks-new'):
-        os.system('mkdir .\mzml-img-blocks-new')
-
-    imgs = get_image_for_blocks(params.profile_mzml_path, window_mz = 25, window_rt= 65, timetoignoreL = 2.5, timetoignoreR = 19)
-
+    #if not os.path.isdir(r'../mzml-img-blocks-new-test-3'):
+        #os.system('mkdir .\mzml-img-blocks-new-test-3')
+    #imgs = get_image_for_blocks(params.profile_mzml_path, window_mz = 30, window_rt= 70, timetoignoreL = 2.5, timetoignoreR = 19)
+    #pickle.dump(imgs, open(params.results_path + "\\saveADAP-Test-3.p", "wb"))
+    #breakpoint()
     """
     Debug lines
     """
-    # pickle.dump(imgs, open(params.results_path + "\\saveADAP.p", "wb"))
-    # imgs = pickle.load(open(params.results_path + "\\saveADAP.p", "rb"))
+
+    imgs = pickle.load(open(params.results_path + "\\saveADAP.p", "rb"))
     # check_similarities_between_v1_v2()
 
+    # Run yolov5 inference and save txt/img results in the runs folder of the yolov5 clone
     os.chdir(r"../ADAP-3D-V2/yolov5")
-    os.system("python detect.py --weights " + params.weights_path + " --img 640 --conf 0.5 --source " + params.source_path + " --save-txt --save-conf")
+    os.system("python detect.py --weights " + params.weights_path + " --img 140 --conf 0.5 --source " + params.source_path + " --save-txt --save-conf")
     arrofpredictions = getinferencearrs()
     arroffilenames = getinferencefilenames()
     dataframetoexport = convert(imgs[0], imgs[1], arroffilenames, arrofpredictions, params.window_mz, params.window_rt)
