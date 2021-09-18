@@ -14,8 +14,8 @@ Export YoloV5 Pytorch formatted data:
 [roboflow.com](url)
 
 ## Workflow
-![ADAP-V2 Workflow](https://user-images.githubusercontent.com/82981121/133908642-9e936637-53dd-44b3-b4da-780ed6ed0a58.png)
 
+![Untitled Diagram drawio](https://user-images.githubusercontent.com/82981121/133908890-de9c1ced-aad1-4003-82d4-b6e1f3a0b6a4.png)
 
 ## Installation
 
