@@ -1,14 +1,21 @@
 # ADAP-BIG-V2
 
-ADAP-BIG-V2 is a software that detects peaks in mass spec data using object detection and image processing through the YOLOv5 algorithm
+ADAP-BIG-V2 is a software that detects peaks in mass spectrometry data using object detection and image processing through the YOLOv5 algorithm and preprocessing blocking methods.
 
 
 ## YoloV5 Pytorch Model Training
 Model training notebook:
-https://colab.research.google.com/drive/1vu1k6z1g4rmgjnz271kcRZLEP1_-K79M?usp=sharing
+https://colab.research.google.com/drive/1Zfc0K-rSsAA366ymqeoTUNEbx3bATYP8?usp=sharing
+
+Labeling website:
+[hasty.ai](url)
+
+Export YoloV5 Pytorch formatted data:
+[roboflow.com](url)
 
 ## Workflow
-![ADAP-3D-V2 Draft Workflow](https://user-images.githubusercontent.com/82981121/129616586-56591c73-2434-4297-bcc3-f680e05477fd.PNG)
+![ADAP-V2 Workflow](https://user-images.githubusercontent.com/82981121/133908642-9e936637-53dd-44b3-b4da-780ed6ed0a58.png)
+
 
 ## Installation
 
