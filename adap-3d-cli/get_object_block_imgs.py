@@ -12,15 +12,17 @@ MZML FILE IMAGE BLOCKING MODULE
 import numpy as np
 import pandas as pd
 import pickle
+from PIL import Image
 from mzml_reader import extract_mzvals, extract_timevals, extract_intensities
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('pdf')
+matplotlib.use('tkagg')
 import params
 import math
 import os
+import collections
 import gc
-plt.rcParams["figure.figsize"] = (0.6 ,1.4)
+plt.rcParams["figure.figsize"] = (0.96 , 1.6)
 gc.collect()
 """
 Helper function to locate time edge values
@@ -44,10 +46,11 @@ def get_image_for_blocks(profile_file_mzML, window_mz=70, window_rt=65, timetoig
     scan_t = extract_timevals(profile_file_mzML)
     mz_list = extract_mzvals(profile_file_mzML, 0, len(scan_t))
     intensity_list = extract_intensities(profile_file_mzML, 0, len(scan_t))
-
+    maxval = np.log10(max(map(max, intensity_list)))
     cnt = 0 # initialize block count
     arr_of_mz_rt = [] # initialize array of [m/z, rt] corresponding to each pixel in each image produced
     intensitiesarr = [] # initialize array of intensities corresponding to each pixel in each image produced
+    blocknums = []
 
     # Cleaning up scan_t data
     if (len(scan_t) > 2 and scan_t[1] - scan_t[0] > 0.1):  ## if gap >0.1: second..
@@ -59,6 +62,20 @@ def get_image_for_blocks(profile_file_mzML, window_mz=70, window_rt=65, timetoig
 
     # Initialize for loops to create blocks
     for time in range(timetoignoreleft + window_rt, timetoignoreright, window_rt * 2):
+        # Create indexes of time of entire mzarr
+        pos_rt = time
+
+        # Adjust index boundaries to create a 50x130 image that doesn't overlap since we want all mz values based from the largest mzarr to include all the possible values we can
+        # (may not be in the center of the image)
+        pos_rt1 = pos_rt - window_rt
+        pos_rt2 = pos_rt + window_rt
+
+        if pos_rt2 >= len(scan_t):
+            pos_rt1 = len(scan_t) - window_rt * 2
+            pos_rt2 = len(scan_t)
+        elif pos_rt1 < 0:
+            pos_rt1 = 0
+            pos_rt2 = 2 * window_rt
         # Find index and length of longest mzarr in time range so no mz values are left out.
         # All mzarrs start and end at the same values but some arrays contain more values in between, so we need to include those
 
@@ -80,111 +97,121 @@ def get_image_for_blocks(profile_file_mzML, window_mz=70, window_rt=65, timetoig
         #for i in range(0, len(allmzintime), 35):
             #newallmzintime.append(allmzintime[i])
 
-        allmzintime = []
-        allintensityintime = []
+        allmzintime = dict()
+
         for i in range(pos_rt1, pos_rt2):
             for j in range(len(mz_list[i])):
-                allmzintime.append(mz_list[i][j])
-                allintensityintime.append(intensity_list[i][j])
-
+                allmzintime[mz_list[i][j]] = intensity_list[i][j]
+        orderedmzintime = dict(collections.OrderedDict(sorted(allmzintime.items())))
+        sortedmz = list(orderedmzintime.keys())
         tempmz = []
 
-        for i in np.arange(allmzintime[0], allmzintime[len(allmzintime) - 1], 0.0005):
+
+
+
+        for i in np.arange(sortedmz[0], sortedmz[len(sortedmz) - 1], 0.0009):
             tempmz.append(i)
 
-        tempmz[len(tempmz) - 1] = tempmz[len(tempmz) - 1] + 0.1
-        binnedvals = list(pd.cut(np.array(allmzintime), tempmz, right=False, labels=False))
+        tempmz[len(tempmz) - 1] = tempmz[len(tempmz) - 1] + 0.001
+        binnedvals = list(pd.cut(np.array(sortedmz), tempmz, right=False, labels=False))
 
         newbinnedmz = []
         newbinnedintensity = []
-        templistmz = []
-        templistintensity = []
 
-        for i in range(1, len(binnedvals)):
+        tempmz1 = []
+        tempintensity1 = []
 
-            if (binnedvals[i] == binnedvals[i - 1]):
-                templistmz.append(allmzintime[i])
-                templistintensity.append(allintensityintime[i])
-            elif len(templistmz) > 0:
-                newbinnedmz.append(allmzintime[i])
-                newbinnedintensity.append(allintensityintime[i])
-            else:
-                newbinnedintensity.append(max(templistintensity))
-                newbinnedmz.append(templistmz[templistintensity.index(max(templistintensity))])
-                templistmz = []
-                templistintensity = []
+        for i in range(1, len(binnedvals) - 1):
+
+            if (binnedvals[i - 1] != binnedvals[i] and binnedvals[i + 1] != binnedvals[i]):
+                newbinnedintensity.append(orderedmzintime[sortedmz[i]])
+                newbinnedmz.append(sortedmz[i])
+                tempmz1 = []
+                tempintensity1 = []
+            elif (binnedvals[i] != binnedvals[i - 1] and binnedvals[i] == binnedvals[i + 1] or (
+                    binnedvals[i] == binnedvals[i - 1] and binnedvals[i] == binnedvals[i + 1])):
+                tempmz1.append(sortedmz[i])
+                tempintensity1.append(orderedmzintime[sortedmz[i]])
+            elif (binnedvals[i] == binnedvals[i - 1] and binnedvals[i] != binnedvals[i + 1]):
+                tempmz1.append(sortedmz[i])
+                tempintensity1.append(orderedmzintime[sortedmz[i]])
+                newbinnedintensity.append(max(tempintensity1))
+                newbinnedmz.append(tempmz1[tempintensity1.index(max(tempintensity1))])
+                tempmz1 = []
+                tempintensity1 = []
 
         newallmzintime = newbinnedmz
 
 
         # Iterate through m/z values in time range to create blocks
         for pos_mz in range(window_mz, len(newallmzintime), window_mz*2):
+
             if(pos_mz > (len(newallmzintime) - window_mz)):
-                pos_mz = len(newallmzintime) - window_mz
+                pos_mz = len(newallmzintime) - window_mz - 1
 
             cnt += 1
-            # Create indexes of time of entire mzarr
-            pos_rt = time
-
-            # Adjust index boundaries to create a 50x130 image that doesn't overlap since we want all mz values based from the largest mzarr to include all the possible values we can
-            # (may not be in the center of the image)
-            pos_rt1 = pos_rt - window_rt
-            pos_rt2 = pos_rt + window_rt
-
-            if pos_rt2 >= len(scan_t):
-                pos_rt1 = len(scan_t) - window_rt * 2
-                pos_rt2 = len(scan_t)
-            elif pos_rt1 < 0:
-                pos_rt1 = 0
-                pos_rt2 = 2 * window_rt
 
             mzvalarrsplit = []
+            intensitysplit = []
             for mzmz in range(pos_mz - window_mz, pos_mz + window_mz):
                 mzvalarrsplit.append(newallmzintime[mzmz])
-
+                intensitysplit.append(allmzintime[newallmzintime[mzmz]])
             # Creating the image from calculated ranges
             area = []
-            arrofmzrttemp = []
+            arr_of_mz_rttemp = []
             # Looping through all times in range
+
             for t in range(pos_rt1, pos_rt2):
-                htgrids = intensity_list[t]
-                grids_part = []
-                for m in range(len(mzvalarrsplit)):
-                # Going through every m/z value (50 total) in mzvalarrsplit and getting the intensity of that mzvalue in each different time value, saving it to an array
-                    # If cannot locate mzvalue in that mzarr at time "t" append intensity of 0
-                    pos_mz_bin = mz_list[t].index(find_nearest(mz_list[t], mzvalarrsplit[m]))
+                intensitygrid = intensity_list[t]
+                mzgrid = mz_list[t]
+                mzleft = mzgrid.index(find_nearest(mzgrid, newallmzintime[pos_mz - window_mz]))
+                mzright = mzgrid.index(find_nearest(mzgrid, newallmzintime[pos_mz + window_mz]))
+                tempvalarrsplit = mzvalarrsplit
+                tempvalarrsplit.append(tempvalarrsplit[len(tempvalarrsplit) - 1] + 0.05)
+                tempvalarrsplit[0] = tempvalarrsplit[0] - 0.1
+                binnedvals2 = list(pd.cut(np.array(mzgrid[mzleft: mzright + 1]), tempvalarrsplit, right=False, labels=False))
+                finalbins = []
+                finalbinsmzrt = []
 
-                    #Resolve case of multiple m/z values in the bin
-                    if(pos_mz_bin > mz_list[t].index(find_nearest(pow(10, grids_part[len(grids_part) - 1])))):
-                        bin_len_multiple = mz_list[t].index(find_nearest(pow(10, grids_part[len(grids_part) - 1])))
-                        highest_intensity_bin = htgrids[bin_len_multiple + 1]
-                        for i in range(mz_list[t].index(find_nearest(pow(10, grids_part[len(grids_part) - 1]) - pos_mz_bin )), pos_mz_bin):
-                            if(ht_grids[i] > highest_intensity_bin):
-                                highest_intensity_bin = ht_grids[bin_len_multiple + i]
-                        grids_part.append(highest_intensity_bin)
-
-                    elif (htgrids[pos_mz_bin] > 0):
-                        grids_part.append(np.log10(htgrids[pos_mz_bin]))
-
+                for i in range(window_mz * 2):
+                    temparr = []
+                    for j in range(len(binnedvals2)):
+                        if (binnedvals2[j] == i):
+                            temparr.append(intensitygrid[mzleft + j])
+                    if (len(temparr) == 0):
+                        if ((j > 1 and j < len(binnedvals2) - 1) and temparr[j - 1] != 0 and temparr[j + 1] != 0):
+                            finalbins.append((temparr[j - 1] + temparr[j + 1]) / 2)
+                            finalbinsmzrt.append([mzgrid[mzleft + j], scan_t[t]])
+                        else:
+                            finalbins.append(0)
+                            finalbinsmzrt.append([0, scan_t[t]])
                     else:
-                        grids_part.append(htgrids[pos_mz_bin])
-                    arrofmzrttemp.append([scan_t[t], mz_list[t][pos_mz_bin]])
+                        finalbins.append(max(temparr))
+                        finalbinsmzrt.append([mzgrid[mzleft + j], scan_t[t]])
 
-                area.append(grids_part)
-            arr_of_mz_rt.append(arrofmzrttemp)
-            intensitiesarr.append(area)
+
+                area.append(finalbins)
+                arr_of_mz_rttemp.append(finalbinsmzrt)
+
+            #breakpoint()
+            if (np.amax(area) > np.log10(1000)):
+                intensitiesarr.append(area)
+                arr_of_mz_rt.append(arr_of_mz_rttemp)
+                blocknums.append(cnt)
 
             # Render array as an image and save it to local drive path
-            plt.imshow(area, cmap='Greys', aspect='auto')
+
+            plt.imshow(area, cmap='Greys', aspect='auto', interpolation = None)
             plt.gca().set_axis_off()
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
             plt.margins(0, 0)
-            plt.savefig(r'.\mzml-img-blocks-new-test-3\ ' + "Block # " + str(cnt) + '.png')
+            plt.savefig(r'.\CORRECT-BLOCKS-4\ ' + "Block # " + str(cnt) + '.png')
             plt.close('all')
+            #breakpoint()
 
-        pickle.dump([cnt, arr_of_mz_rt, intensitiesarr], open(params.results_path + "\\saveADAP-Test-3.p", "wb"))
-    return arr_of_mz_rt, intensitiesarr
+        #pickle.dump([cnt, arr_of_mz_rt, intensitiesarr], open(params.results_path + "\\saveADAP-Test-3.p", "wb"))
 
+    return blocknums, intensitiesarr, arr_of_mz_rt
 
 
 

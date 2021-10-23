@@ -74,11 +74,11 @@ def convert(mz_rt_img, intensity_img, filenamelist, inferencearr, window_mz, win
             # Iterate through each inference box in each image (since one image can have multiple objects detected)
             # Convert local proportion of image values into pixel values, then since for example, 640/window_mz*2 pixels represent each actual visible "box" value of m/z and rt and intensity
             # After you have the number of pixels into the image the center is, we convert that by diving how many pixels each box is and we have the # box that the peak is in
-            centerx = round(float(inference[1]) * 60)
-            centery = round(float(inference[2]) * 140)
-            width= round(float(inference[3]) * 60)
-            height = round(float(inference[4]) * 140)
-
+            centerx = round(float(inference[1]) * 600 / 10)
+            centery = round(float(inference[2]) * 700 / 5)
+            width= round(float(inference[3]) * 600 /10)
+            height = round(float(inference[4]) * 700 /5)
+            #breakpoint()
             # Get all boxes in the range of the bounding box and find the intensity for each value, saving the maximum intensity index in the image (horiz = mzval index, vertical = timeval index)
             maxintensitycoords = [0,0]
             maxintensity = 0
@@ -86,24 +86,25 @@ def convert(mz_rt_img, intensity_img, filenamelist, inferencearr, window_mz, win
                 for mzval in range(centerx - math.floor(width/2), centerx + math.floor(width/2)):
                     if (intensity_img[idxofimg][timeval][mzval] > maxintensity):
                         maxintensity = intensity_img[idxofimg][timeval][mzval]
-                        maxintensitycoords = [timeval, mzval]
-
+                        mzrtval = img[timeval][mzval]
+            #breakpoint()
             # Calculate index in the mz_rt_img arr of the mz, rt value so we can get the exact mz and rt time value of the peak
-            poscenterinimg = 60 * maxintensitycoords[0] + maxintensitycoords[1]
-            imgcenter = img[60 * centery + centerx]
-            mzrtval = img[poscenterinimg]
+            #poscenterinimg = 60 * maxintensitycoords[0] +
+            #imgcenter = img[60 * centery + centerx]
+            mzrtval[0] = round(mzrtval[0], 8)
+            mzrtval[1] = round(mzrtval[1], 8)
             mzrtvalarr.append(mzrtval)
 
             #correct mzrange around 0.015 or 0.013
-            mzleft = img[60* centery + centerx][1] - 0.0075
-            mzright = img[60 * centery + centerx][1] + 0.0075
+            mzleft = img[centery][centerx][1] - 0.0075
+            mzright = img[centery][centerx][1] + 0.0075
 
             #max time 0.5 min, min anything below 0.5min
-            rtleft = img[60 * (centery - math.floor(height/2)) + centerx][0]
-            rtright = img[60 * (centery + math.floor(height/2) - 1) + centerx][0]
+            rtleft = img[centery - math.floor(height/2)][centerx][0]
+            rtright = img[centery + math.floor(height/2) - 1][centerx][0]
 
             #Convert intensity from log10 back to original to save in dataframe
-            finalintensity = pow(10, maxintensity)
+            finalintensity = maxintensity
 
             """
             Uncomment to debug images

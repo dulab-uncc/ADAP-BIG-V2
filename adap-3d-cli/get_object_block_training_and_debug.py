@@ -4,18 +4,23 @@
 -used to debug and get object blocks to train model on
 
 """
-
+import tkinter
+import matplotlib
+matplotlib.use("tkagg")
 import numpy as np
 import pandas as pd
 import params
+import operator
+import collections
 from get_object_block_imgs import get_image_for_blocks
 from mzml_reader import extract_mzvals, extract_timevals, extract_intensities
 import matplotlib.pyplot as plt
-import matplotlib
+from mpl_toolkits import mplot3d
+
 import math
 
-plt.rcParams["figure.figsize"] = (3 ,7)
-matplotlib.use("Agg")
+plt.rcParams["figure.figsize"] = (3.84 , 6.4)
+
 import os
 
 # Helper function for when attribute values are too rounded in order to locate them in an array
@@ -35,7 +40,7 @@ def find_max_list(list):
 def check_similarities_between_v1_v2():
     newdataframe = []
     dataFramePrevEvaluation = pd.read_csv(r"C:\Users\jerry\Desktop\DCSM.csv")
-    dataFrameV2Prediction = pd.read_csv(params.results_path + "\ADAP-3D-Predictions.csv")
+    dataFrameV2Prediction = pd.read_csv(r"C:\Users\jerry\Desktop\RUN22-3D.csv")
     predictionsArrTime = dataFramePrevEvaluation['retention_time']
     predictionsArrMz = dataFramePrevEvaluation['mz']
     predictionsArrV2Time = dataFrameV2Prediction['Retention Time']
@@ -45,12 +50,12 @@ def check_similarities_between_v1_v2():
     for time in range(len(predictionsArrV2Mz)):
         check = 0
         for time1 in range(len(predictionsArrMz)):
-            if(check == 0 and math.isclose(predictionsArrMz[time1], predictionsArrV2Mz[time], rel_tol = 0.005) and math.isclose(predictionsArrTime[time1], predictionsArrV2Time[time], rel_tol = 0.05)):
+            if(check == 0 and math.isclose(predictionsArrMz[time1], predictionsArrV2Mz[time], rel_tol = 0.0015) and math.isclose(predictionsArrTime[time1], predictionsArrV2Time[time], rel_tol = 0.1)):
                 newdataframe.append([predictionsArrV2Mz[time], predictionsArrV2Time[time]])
                 check = 1
 
     finaldataframe = pd.DataFrame(newdataframe, columns=['M/Z', 'Retention Time'])
-    finaldataframe.to_csv(params.results_path + "\ADAP-3D-Predictions-Similarities.csv")
+    finaldataframe.to_csv(params.results_path + "\ADAP-3D-Predictions-Similarities-Run22.csv")
 
 def get_image_for_blocks2(profile_file_mzML, window_mz=60, window_rt=300, timetoignoreL = 2, timetoignoreR = 20, debugimageversion = False):
     dataFramePrevEvaluation = pd.read_csv(r"C:\Users\jerry\Desktop\DCSM.csv")
@@ -58,6 +63,10 @@ def get_image_for_blocks2(profile_file_mzML, window_mz=60, window_rt=300, timeto
     confirmedpeaks = pd.read_csv(r"C:\Users\jerry\Desktop\confirmed_peaks.csv")
     mzvals = list(map(float, confirmedpeaks['m/z']))
     timevals = confirmedpeaks['rt']
+
+    dataFramePrevEvaluation2 = pd.read_csv(r"C:\Users\jerry\Desktop\files.filtered.part6.csv")
+    mzvals2 = list(map(float,  dataFramePrevEvaluation2['mz']))
+    timevals2 =  dataFramePrevEvaluation2['apex ret time']
 
 
     predictionsArrTime = dataFramePrevEvaluation['retention_time']
@@ -81,7 +90,7 @@ def get_image_for_blocks2(profile_file_mzML, window_mz=60, window_rt=300, timeto
     scan_t = extract_timevals(inputfile)
     mz_list = extract_mzvals(inputfile, 0, len(scan_t))
     intensity_list = extract_intensities(inputfile, 0, len(scan_t))
-    cnt = 0
+    #cnt = 0
     ## Cleaning up data into minutes##
     if (len(scan_t) > 2 and scan_t[1] - scan_t[0] > 0.1):  ## if gap >0.1: second..
         scan_t = [i / 60.0 for i in scan_t]
@@ -95,14 +104,14 @@ def get_image_for_blocks2(profile_file_mzML, window_mz=60, window_rt=300, timeto
     #Add a check to remove rt before and after for noise
     timetoignoreleft = find_nearest(scan_t, timetoignoreL)
     timetoignoreright = find_nearest(scan_t, timetoignoreR)
-    for time in range(len(timevals)):
+    for time in range(189, len(mzvals2)):
 
         # Find index and length of longest mzarr in time range so no mz values are left out.
         # All mzarrs start and end at the same values but some arrays contain more values in between, so we need to include those
-        mz0 = mzvals[time]
-        rt0 = timevals[time]
+        mz0 = mzvals2[time]
+        rt0 = timevals2[time]
 
-        cnt += 1
+        cnt = time + 1
         # Create indexes of time of entire mzarr
         pos_rt = scan_t.index(find_nearest(scan_t, rt0))
 
@@ -118,116 +127,105 @@ def get_image_for_blocks2(profile_file_mzML, window_mz=60, window_rt=300, timeto
             pos_rt1 = 0
             pos_rt2 = 2 * window_rt
 
-        allmzintime = []
-        allintensityintime = []
+        allmzintime = dict()
+
         for i in range(pos_rt1, pos_rt2):
             for j in range(len(mz_list[i])):
-                allmzintime.append(mz_list[i][j])
-                allintensityintime.append(intensity_list[i][j])
-
+                allmzintime[mz_list[i][j]] = intensity_list[i][j]
+        orderedmzintime = dict(collections.OrderedDict(sorted(allmzintime.items())))
+        sortedmz = list(orderedmzintime.keys())
         tempmz = []
-
-        for i in np.arange(allmzintime[0], allmzintime[len(allmzintime) - 1], 0.0005):
+        binval = mz_list[pos_rt][mz_list[pos_rt].index(find_nearest(mz_list[pos_rt], mz0))] - mz_list[pos_rt][mz_list[pos_rt].index(find_nearest(mz_list[pos_rt], mz0)) - 1]
+        for i in np.arange(sortedmz[0], sortedmz[len(sortedmz) - 1], 1.44 * binval):
             tempmz.append(i)
 
-        tempmz[len(tempmz)-1] = tempmz[len(tempmz) - 1] + 0.1
-        binnedvals = list(pd.cut(np.array(allmzintime), tempmz, right = False, labels = False))
+        tempmz[len(tempmz)-1] = tempmz[len(tempmz) - 1] + 0.001
+        binnedvals = list(pd.cut(np.array(sortedmz), tempmz, right = False, labels = False))
 
         newbinnedmz = []
         newbinnedintensity = []
-        templistmz = []
-        templistintensity = []
 
-        for i in range(1, len(binnedvals)):
+        tempmz1 = []
+        tempintensity1 = []
 
-            if(binnedvals[i] == binnedvals[i-1]):
-                templistmz.append(allmzintime[i])
-                templistintensity.append(allintensityintime[i])
-            elif len(templistmz) > 0:
-                newbinnedmz.append(allmzintime[i])
-                newbinnedintensity.append(allintensityintime[i])
-            else:
-                newbinnedintensity.append(max(templistintensity))
-                newbinnedmz.append(templistmz[templistintensity.index(max(templistintensity))])
-                templistmz = []
-                templistintensity = []
+        for i in range(1, len(binnedvals)-1):
+
+            if(binnedvals[i-1] != binnedvals[i] and binnedvals[i+1] != binnedvals[i]):
+                newbinnedintensity.append(orderedmzintime[sortedmz[i]])
+                newbinnedmz.append(sortedmz[i])
+                tempmz1 = []
+                tempintensity1 = []
+            elif(binnedvals[i] != binnedvals[i-1] and binnedvals[i] == binnedvals[i+1] or (binnedvals[i] == binnedvals[i-1] and binnedvals[i] == binnedvals[i+1])):
+                tempmz1.append(sortedmz[i])
+                tempintensity1.append(orderedmzintime[sortedmz[i]])
+            elif(binnedvals[i] == binnedvals[i-1] and binnedvals[i] != binnedvals[i+1]):
+                tempmz1.append(sortedmz[i])
+                tempintensity1.append(orderedmzintime[sortedmz[i]])
+                newbinnedintensity.append(max(tempintensity1))
+                newbinnedmz.append(tempmz1[tempintensity1.index(max(tempintensity1))])
+                tempmz1 = []
+                tempintensity1 = []
 
         newallmzintime = newbinnedmz
-
 
         # Set index of mz value in the longestmzarr and make windows
         pos_mzorig = newallmzintime.index(find_nearest(newallmzintime, mz0))
         pos_mz1orig = pos_mzorig - window_mz
         pos_mz2orig = pos_mzorig + window_mz
+
+        if pos_rt2orig >= len(newallmzintime):
+            pos_mz1orig = len(newallmzintime) - window_mz * 2
+            pos_mz2orig = len(newallmzintime)
+        elif pos_mz1orig < 0:
+            pos_mz1orig = 0
+            pos_mz2orig = 2 * window_mz
         mzvalarrsplit = []
         intensitysplit = []
-        # Go through every m/z value in the longest mzarr that is within 50 values and saving them to an array to be used in image creation
-        # Because the m/z values are not always in the same index position, we will use .index and find_nearest()
-        # for mzmz in range(window_mz, -1, -1):
-        # mzvalarrsplit.append(round(allmzintime[int(pos_rt)][int(pos_mzorig - mzmz)], 6))
-        # for mzmz in range(1, window_mz):
-        # mzvalarrsplit.append(round(allmzintime[int(pos_rt)][int(pos_mzorig + mzmz)], 6))
-        for mzmz in range(pos_mzorig - window_mz, pos_mzorig + window_mz):
+        for mzmz in range(pos_mz1orig, pos_mz2orig):
             mzvalarrsplit.append(newallmzintime[mzmz])
-            intensitysplit.append(allintensityintime[mzmz])
+            intensitysplit.append(allmzintime[newallmzintime[mzmz]])
         # Creating the image from calculated ranges
         area = []
-        arrofmzrttemp = []
         # Looping through all times in range
-        """
+
         for t in range(pos_rt1, pos_rt2):
-            htgrids = intensity_list[t]
-            grids_part = []
-            for m in range(len(mzvalarrsplit)):
-                # Going through every m/z value (50 total) in mzvalarrsplit and getting the intensity of that mzvalue in each different time value, saving it to an array
-                # If cannot locate mzvalue in that mzarr at time "t" append intensity of 0
-                if(abs(mzvalarrsplit[m] - mz_list[t][mz_list[t].index(find_nearest(mz_list[t], mzvalarrsplit[m]))]) <= 0.000005):
-                    pos_mz = mz_list[t].index(find_nearest(mz_list[t], mzvalarrsplit[m]))
-                    grids_part.append(np.log10(htgrids[pos_mz]))
-                else:
-                    grids_part.append(0)
-            area.append(grids_part)
-            """
-        for t in range(pos_rt1, pos_rt2):
+
             intensitygrid = intensity_list[t]
             mzgrid = mz_list[t]
             mzleft = mzgrid.index(find_nearest(mzgrid, newallmzintime[pos_mzorig - window_mz]))
             mzright = mzgrid.index(find_nearest(mzgrid, newallmzintime[pos_mzorig + window_mz]))
-            grids_part = []
             tempvalarrsplit = mzvalarrsplit
-            tempvalarrsplit[len(tempvalarrsplit) - 1] = tempvalarrsplit[len(tempvalarrsplit) - 1] + 0.001
-            tempvalarrsplit[0] = tempvalarrsplit[0] - 0.001
-            binnedvals2 = list(pd.cut(np.array(mzgrid[mzleft: mzright + 1]), tempvalarrsplit, right=False, labels=False))
+            tempvalarrsplit.append(tempvalarrsplit[len(tempvalarrsplit) - 1] + 0.05)
+            tempvalarrsplit[0] = tempvalarrsplit[0] - 0.1
+            breakpoint()
+            binnedvals2 = list(pd.cut(np.array(mzgrid[mzleft: mzright+1]), tempvalarrsplit, right=False, labels=False))
             finalbins = []
+            #breakpoint()
 
-            for i in range(window_mz*2):
+            for i in range(window_mz * 2):
                 temparr = []
+                #TODO: Fix
                 for j in range(len(binnedvals2)):
                     if(binnedvals2[j] == i):
                         temparr.append(intensitygrid[mzleft + j])
-                if(len(temparr) == 0):
-                    finalbins.append(0)
+                if(len(temparr) == 0 ):
+                    if(j>1 and j < len(binnedvals2)-1 and temparr[j - 1] != 0 and temparr[j + 1] !=0):
+                        finalbins.append((temparr[j - 1] + temparr[j + 1])/2)
+                    else:
+                        finalbins.append(0)
                 else:
                     finalbins.append(max(temparr))
 
-            area.append(finalbins)
-            """
-            for m in range(len(finalmzlist)):
-                try:
-                    pos_mz = mz_list[t].index(finalmzlist[m])
-                    grids_part.append(np.log10(intensitygrid[pos_mz]))
-                except:
-                    grids_part.append(0)
-            area.append(grids_part)
-            """
 
+            area.append(finalbins)
         # Render array as an image and save it to local drive path
         plt.imshow(area, cmap='Greys', aspect='auto')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
         plt.margins(0, 0)
-        plt.savefig(r'.\mzml-img-blocks-new-test-5\ ' + "Block # " + str(cnt) + '.png')
+        plt.savefig(r'.\mzml-VT001\ ' + "Hand Verified Block # " + str(cnt) + '.png')
         plt.close('all')
+        #breakpoint()
 
         """
         Add color bar, etc
