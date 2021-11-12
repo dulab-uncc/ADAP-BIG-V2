@@ -168,6 +168,7 @@ def get_image_for_blocks(profile_file_mzML, window_mz=70, window_rt=65, timetoig
                 arr_of_mz_rttemp.append(finalbinsmzrt)
 
             if (np.amax(area) > min_intensity_threshold):
+                cnt += 1
                 intensitiesarr.append(area)
                 arr_of_mz_rt.append(arr_of_mz_rttemp)
                 blocknums.append(cnt)
@@ -181,7 +182,7 @@ def get_image_for_blocks(profile_file_mzML, window_mz=70, window_rt=65, timetoig
                 plt.savefig(r'.\Blocks\ ' + "Block # " + str(cnt) + '.png')
                 plt.close('all')
 
-                cnt += 1
+
                 #breakpoint()
 
         #pickle.dump([cnt, arr_of_mz_rt, intensitiesarr], open(params.results_path + "\\saveADAP-Test-3.p", "wb"))

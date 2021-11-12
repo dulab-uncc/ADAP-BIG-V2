@@ -33,17 +33,17 @@ from matplotlib import cm
 import numpy as np
 
 def main():
-    if not os.path.isdir(r'../Blocks'):
-      os.system('mkdir .\Blocks')
+    #if not os.path.isdir(r'../Blocks'):
+      #os.system('mkdir .\Blocks')
     #extract_training_data(params.profile_mzml_path, window_mz = 48, window_rt= 80)
     #breakpoint()
 
 
-    #if not os.path.isdir(r'../tempfolder'):
-        #os.system('mkdir .\tempfolder')
-    imgs = get_image_for_blocks(params.profile_mzml_path, window_mz = 48, window_rt= 80, timetoignoreL = 2.5, timetoignoreR = 19, min_intensity_threshold = 1000)
-    pickle.dump(imgs, open(params.results_path + "\\img_data.p", "wb"))
-    breakpoint()
+    #if not os.path.isdir(r'../Blocks2'):
+        #os.system('mkdir .\Blocks2')
+    #imgs = get_image_for_blocks(params.profile_mzml_path, window_mz = 48, window_rt= 80, timetoignoreL = 2.5, timetoignoreR = 19, min_intensity_threshold = 1000)
+    #pickle.dump(imgs, open(params.results_path + "\\img_data.p", "wb"))
+    #breakpoint()
     """
     Debug lines
     """
@@ -53,18 +53,18 @@ def main():
     # disable garbage collector
     #gc.disable()
 
-    #imgs = pickle.load(open(params.results_path + "\\ADAP-3D-MZ-INTENSITY-DATA-V2-BINARY.p", 'rb'))
+    imgs = pickle.load(open(params.results_path + "\\img_data.p", 'rb'))
 
     # enable garbage collector again
     #gc.enable()
     #output.close()
-    testvar1 = pickle.load(open(params.results_path + "\\testvar1.p", 'rb'))
-    testvar2 = pickle.load(open(params.results_path + "\\testvar2.p", 'rb'))
+    #testvar1 = pickle.load(open(params.results_path + "\\testvar1.p", 'rb'))
+    #testvar2 = pickle.load(open(params.results_path + "\\testvar2.p", 'rb'))
     #pickle.dump(testvar, open(params.results_path + "\\testvar1.p", "wb"))
     #pickle.dump(testvar2, open(params.results_path + "\\testvar2.p", "wb"))
 
-
-    rgb = pickle.load(open(r"C:\Users\jerry\Desktop\Results\rgb.p", "rb"))
+    """
+    rgb = pickle.load(open(r"C:\ Users\jerry\Desktop\Results\rgb.p", "rb"))
     testing = rgb[0]
     newimgarr = []
 
@@ -85,7 +85,7 @@ def main():
      temparr.append(temp)
     temparr = np.asarray(temparr)
     temparr = [[1, np.asarray([temparr, temparr, temparr])]]
-
+    """
 
 
     """
@@ -96,6 +96,8 @@ def main():
     plt.savefig(r'.\CORRECT-BLOCKS-4\ ' + "TEST.png")
     plt.close('all')
     """
+
+    """
     #breakpoint()
 
 
@@ -104,16 +106,18 @@ def main():
     # Run yolov5 inference and save txt/img results in the runs folder of the yolov5 clone
     #os.chdir(r"../ADAP-3D-V2/yolov5")
     #os.system("python detect.py --weights " + params.weights_path + " --img 700 --conf 0.63 --source " + params.source_path + " --save-txt --save-conf")
-    run(weights = params.weights_path, imgsz = 160, conf_thres =  0.63, save_txt = True,  save_conf = True, npimgs = temparr)
+    
 
     breakpoint()
+    """
 
-
-    run(weights=params.weights_path, imgsz=160, conf_thres=0.63, save_txt=True, save_conf=True, npimgs=imgs)
+    #run(weights=params.weights_path, imgsz=160, conf_thres=0.2, source = params.source_path, save_txt=True, save_conf=True)
+    #breakpoint()
     arrofpredictions = getinferencearrs()
     arroffilenames = getinferencefilenames()
-    dataframetoexport = convert(imgs[0], imgs[1], arroffilenames, arrofpredictions, params.window_mz, params.window_rt)
-    dataframetoexport.to_csv(params.results_path + "\ADAP-3D-Predictions-run22.csv")
+    #breakpoint()
+    dataframetoexport = convert(imgs[2], imgs[1], arroffilenames, arrofpredictions, params.window_mz, params.window_rt)
+    dataframetoexport.to_csv(params.results_path + "\Final Predictions.csv")
 
 if __name__ == '__main__':
     main()
