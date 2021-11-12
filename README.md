@@ -29,6 +29,7 @@ pip install requirements.txt
 
 ```python
 python adap_3d_main.py
+git clone https://github.com/ultralytics/yolov5
 ```
 
 ## Adjust Parameters
