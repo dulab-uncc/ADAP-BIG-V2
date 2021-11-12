@@ -33,89 +33,17 @@ from matplotlib import cm
 import numpy as np
 
 def main():
-    #if not os.path.isdir(r'../Blocks'):
-      #os.system('mkdir .\Blocks')
-    #extract_training_data(params.profile_mzml_path, window_mz = 48, window_rt= 80)
-    #breakpoint()
+    if not os.path.isdir(r'../Blocks'):
+      os.system('mkdir .\Blocks')
+    extract_training_data(params.profile_mzml_path, window_mz = 48, window_rt= 80)
 
-
-    #if not os.path.isdir(r'../Blocks2'):
-        #os.system('mkdir .\Blocks2')
-    #imgs = get_image_for_blocks(params.profile_mzml_path, window_mz = 48, window_rt= 80, timetoignoreL = 2.5, timetoignoreR = 19, min_intensity_threshold = 1000)
+    imgs = get_image_for_blocks(params.profile_mzml_path, window_mz = 48, window_rt= 80, timetoignoreL = 2.5, timetoignoreR = 19, min_intensity_threshold = 1000)
     #pickle.dump(imgs, open(params.results_path + "\\img_data.p", "wb"))
-    #breakpoint()
-    """
-    Debug lines
-    """
-    #check_similarities_between_v1_v2()
-    #breakpoint()
+    #imgs = pickle.load(open(params.results_path + "\\img_data.p", 'rb'))
 
-    # disable garbage collector
-    #gc.disable()
-
-    imgs = pickle.load(open(params.results_path + "\\img_data.p", 'rb'))
-
-    # enable garbage collector again
-    #gc.enable()
-    #output.close()
-    #testvar1 = pickle.load(open(params.results_path + "\\testvar1.p", 'rb'))
-    #testvar2 = pickle.load(open(params.results_path + "\\testvar2.p", 'rb'))
-    #pickle.dump(testvar, open(params.results_path + "\\testvar1.p", "wb"))
-    #pickle.dump(testvar2, open(params.results_path + "\\testvar2.p", "wb"))
-
-    """
-    rgb = pickle.load(open(r"C:\ Users\jerry\Desktop\Results\rgb.p", "rb"))
-    testing = rgb[0]
-    newimgarr = []
-
-
-    #for i in range(len(testvar1)):
-     #for j in range(len(testvar1[0])):
-      #if(testvar1[i][j] > 0):
-       #testvar1[i][j] = np.log10(testvar1[i][j])
-
-    maxval = np.amax(testvar1)
-    minval = np.amin(testvar1)
-
-    temparr = []
-    for i in range(len(testvar1)):
-     temp = []
-     for j in range(len(testvar1[0])):
-      temp.append(((maxval - testvar1[i][j]) / (maxval-minval))  * 255)
-     temparr.append(temp)
-    temparr = np.asarray(temparr)
-    temparr = [[1, np.asarray([temparr, temparr, temparr])]]
-    """
-
-
-    """
-    plt.imshow(testing, cmap="Greys", aspect='auto', interpolation=None)
-    plt.gca().set_axis_off()
-    plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
-    plt.margins(0, 0)
-    plt.savefig(r'.\CORRECT-BLOCKS-4\ ' + "TEST.png")
-    plt.close('all')
-    """
-
-    """
-    #breakpoint()
-
-
-    #node_color = [(r, g, b) for r, g, b, a in mapper.to_rgba(data, bytes=True)]
-
-    # Run yolov5 inference and save txt/img results in the runs folder of the yolov5 clone
-    #os.chdir(r"../ADAP-3D-V2/yolov5")
-    #os.system("python detect.py --weights " + params.weights_path + " --img 700 --conf 0.63 --source " + params.source_path + " --save-txt --save-conf")
-    
-
-    breakpoint()
-    """
-
-    #run(weights=params.weights_path, imgsz=160, conf_thres=0.2, source = params.source_path, save_txt=True, save_conf=True)
-    #breakpoint()
+    run(weights=params.weights_path, imgsz=160, conf_thres=0.2, source = params.source_path, save_txt=True, save_conf=True)
     arrofpredictions = getinferencearrs()
     arroffilenames = getinferencefilenames()
-    #breakpoint()
     dataframetoexport = convert(imgs[2], imgs[1], arroffilenames, arrofpredictions, params.window_mz, params.window_rt)
     dataframetoexport.to_csv(params.results_path + "\Final Predictions.csv")
 
