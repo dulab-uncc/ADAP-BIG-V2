@@ -76,16 +76,16 @@ def convert(mz_rt_img, intensity_img, filenamelist, inferencearr, window_mz, win
             # Convert local proportion of image values into pixel values, then since for example, 640/window_mz*2 pixels represent each actual visible "box" value of m/z and rt and intensity
             # After you have the number of pixels into the image the center is, we convert that by diving how many pixels each box is and we have the # box that the peak is in
             #breakpoint()
-            centerx = round(float(inference[1]) * window_mz)
-            centery = round(float(inference[2]) * window_rt)
-            width= round(float(inference[3]) * window_mz)
-            height = round(float(inference[4]) * window_rt)
+            centerx =  - round(float(inference[1]) * (2*window_mz))
+            centery = round(float(inference[2]) * (2*window_rt))
+            width= round(float(inference[3]) * (2*window_mz))
+            height = round(float(inference[4]) * (2*window_rt))
             #breakpoint()
             # Get all boxes in the range of the bounding box and find the intensity for each value, saving the maximum intensity index in the image (horiz = mzval index, vertical = timeval index)
             maxintensitycoords = [0,0]
             maxintensity = 0
-            for timeval in range(centery - math.floor(height), centery + math.floor(height)):
-                for mzval in range(centerx - math.floor(width), centerx + math.floor(width)):
+            for timeval in range(centery - math.floor(height/2), centery + math.floor(height/2)):
+                for mzval in range(centerx - math.floor(width/2), centerx + math.floor(width/2)):
                     if (intensity_img[idxofimg][timeval][mzval] > maxintensity):
                         maxintensity = intensity_img[idxofimg][timeval][mzval]
                         mzrtval = img[timeval][mzval]
