@@ -13,11 +13,17 @@ develop-eggs/
 dist/
 downloads/
 ../mzml-img-blocks/
+../Blocks/
+../Blocks2/
 eggs/
 .eggs/
 lib/
 lib64/
 mzml-img-blocks/*
+Blocks
+Blocks2
+runs
+.idea
 mzml-img-blocks-new/*
 mzml-img-detection-debug/*
 yolov5/runs/
