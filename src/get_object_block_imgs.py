@@ -179,7 +179,7 @@ def get_image_for_blocks(profile_file_mzML, window_mz=70, window_rt=65, timetoig
                 plt.gca().set_axis_off()
                 plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
                 plt.margins(0, 0)
-                plt.savefig(r'.\Blocks\ ' + "Block # " + str(cnt) + '.png')
+                plt.savefig(r'../Blocks/' + "Block # " + str(cnt) + '.png')
                 plt.close('all')
 
 

@@ -37,7 +37,7 @@ def getinferencearrs():
     onlyfiles = listdir(params.txt_inference_path)
     arr_of_inferences = []
     for file in onlyfiles:
-        with open(params.txt_inference_path + "\\" + file) as my_file:
+        with open(params.txt_inference_path + "/" + file) as my_file:
             txt = my_file.read().splitlines()
             splitarr = []
             for arr in txt:
@@ -89,10 +89,26 @@ def convert(mz_rt_img, intensity_img, filenamelist, inferencearr, window_mz, win
                     if (intensity_img[idxofimg][timeval][mzval] > maxintensity):
                         maxintensity = intensity_img[idxofimg][timeval][mzval]
                         mzrtval = img[timeval][mzval]
+                        mzrtval[0] = round(mzrtval[0], 8)
+                        mzrtval[1] = round(mzrtval[1], 8)
+                        mzrtvalarr.append(mzrtval)
+                        # correct mzrange around 0.015 or 0.013
+                        mzleft = img[centery][centerx][1] - 0.0075
+                        mzright = img[centery][centerx][1] + 0.0075
+                        # max time 0.5 min, min anything below 0.5min
+                        rtleft = img[centery - math.floor(height / 2)][centerx][0]
+                        rtright = img[centery + math.floor(height / 2) - 1][centerx][0]
+                        # Convert intensity from log10 back to original to save in dataframe
+                        finalintensity = maxintensity
+                        # Create dataframe
+                        finalarr.append([filenamelist[i], mzrtval[1], mzrtval[0], mzleft, mzright, rtleft, rtright, finalintensity, round(float(inference[5]) * 100, 3)])
+
             #breakpoint()
             # Calculate index in the mz_rt_img arr of the mz, rt value so we can get the exact mz and rt time value of the peak
             #poscenterinimg = 60 * maxintensitycoords[0] +
             #imgcenter = img[60 * centery + centerx]
+
+            ''' All of this was moved inside the if statement above, to avoid issues with mzrtval being called, before it's initialized ------------------------------------------------------------------------------------------------------------------------------------
             mzrtval[0] = round(mzrtval[0], 8)
             mzrtval[1] = round(mzrtval[1], 8)
             mzrtvalarr.append(mzrtval)
@@ -110,5 +126,6 @@ def convert(mz_rt_img, intensity_img, filenamelist, inferencearr, window_mz, win
 
             #Create dataframe
             finalarr.append([filenamelist[i], mzrtval[1], mzrtval[0], mzleft, mzright, rtleft, rtright, finalintensity, round(float(inference[5]) * 100, 3)])
+            '''
 
     return pd.DataFrame(np.array(finalarr), columns=['Block Number', 'M/Z', 'Retention Time', 'M/Z Left Range', 'M/Z Right Range', "Retention Time Left Range", "Retention Time Right Range", "Intensity", "Model Confidence"])
